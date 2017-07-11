@@ -1,0 +1,93 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="shortcut icon" href="/static/img/favicon.ico" /><title>一个Rss阅读器的实现-解析rss数据 - 行动的小矮人</title><meta name="author" content="Liu Hushan" /><meta name="description" content="一个Rss阅读器的实现-解析rss数据" /><meta name="keywords" content="一个Rss阅读器的实现-解析rss数据, 行动的小矮人, iOS" /><link rel="alternate" type="application/rss+xml" title="RSS" href="/feed.xml"><meta content="" property="fb:app_id"><meta content="行动的小矮人" property="og:site_name"><meta content="一个Rss阅读器的实现-解析rss数据" property="og:title"><meta content="article" property="og:type"><meta content="一个记录的地方" property="og:description"><meta content="http://localhost:4000/ios/2014/11/10/%E4%B8%80%E4%B8%AARss%E9%98%85%E8%AF%BB%E5%99%A8%E7%9A%84%E5%AE%9E%E7%8E%B0-%E8%A7%A3%E6%9E%90rss%E6%95%B0%E6%8D%AE.html" property="og:url"><meta content="2014-11-10T00:00:00+08:00" property="article:published_time"><meta content="http://localhost:4000/about/" property="article:author"><meta content="http://localhost:4000/static/img/avatar.jpg" property="og:image"><meta content="iOS" property="article:section"><meta name="twitter:card" content="summary"><meta name="twitter:site" content="@"><meta name="twitter:creator" content="@"><meta name="twitter:title" content="一个Rss阅读器的实现-解析rss数据"><meta name="twitter:url" content="http://localhost:4000/ios/2014/11/10/%E4%B8%80%E4%B8%AARss%E9%98%85%E8%AF%BB%E5%99%A8%E7%9A%84%E5%AE%9E%E7%8E%B0-%E8%A7%A3%E6%9E%90rss%E6%95%B0%E6%8D%AE.html"><meta name="twitter:description" content="一个记录的地方"><link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-T8Gy5hrqNKT+hzMclPo118YTQO6cYprQmhrYwIiQ/3axmI1hQomh7Ud2hPOy8SP1" crossorigin="anonymous"><link rel="stylesheet" href="/static/css/syntax.css"><link href="/static/css/bootstrap.min.css" rel="stylesheet"><link href="https://fonts.googleapis.com/css?family=Roboto+Condensed:400,300italic,300,400italic,700&amp;subset=latin,latin-ext" rel="stylesheet" type="text/css"><link rel="stylesheet" href="/static/css/super-search.css"><link rel="stylesheet" href="/static/css/thickbox.css"><link rel="stylesheet" href="/static/css/projects.css"><link rel="stylesheet" href="/static/css/main.css"> <script> (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){ (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o), m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m) })(window,document,'script','https://www.google-analytics.com/analytics.js','ga'); ga('create', 'UA-XXXXXXXX-Y', 'auto'); ga('send', 'pageview'); </script><body><div class="container"><div class="col-sm-3"><div class="fixed-condition"> <a href="/"><img class="profile-avatar" src="/static/img/avatar.jpg" height="75px" width="75px" /></a><h1 class="author-name">Liu Hushan</h1><div class="profile-about"> 篮球，机械键盘，手工皮具，代码</div><div class="social"><ul><li><a href="#" target="_blank"><i class="fa fa-facebook"></i></a><li><a href="https://twitter.com/justvi" target="_blank"><i class="fa fa-twitter"></i></a><li><a href="https://www.linkedin.com/in/hushan-liu-4915aa59/" target="_blank"><i class="fa fa-linkedin"></i></a><li><a href="https://github.com/justvi" target="_blank"><i class="fa fa-github"></i></a></ul></div><div class="search" id="js-search"> <input type="text" placeholder="(sitemap)~$ type to search" class="search__input form-control" id="js-search__input"><ul class="search__results" id="js-search__results"></ul></div><hr /><ul class="sidebar-nav"> <strong>Navigation</strong><li><a href="/">Home</a><li><a class="about" href="/about/">About Me</a><li><a class="about" href="/feed.xml">XML Feed</a></ul></div></div><div class="col-sm-8 col-offset-1 main-layout"><header class="post-header"><h1 class="post-title">一个Rss阅读器的实现-解析rss数据</h1></header><span class="time">10 Nov 2014</span> <span class="categories"> &raquo; <a href="/category/iOS">iOS</a> </span><div class="content"><div class="post"><p>解析数据使用NSXMLParser并将其代理设置为DetailViewController，在其中实现它的代理方法。所以在数据下载完成后实现解析，修改connectionDidFinishLoading如下：<div class="highlighter-rouge"><pre class="highlight"><code>- (void)connectionDidFinishLoading:(NSURLConnection *)connection
+{
+	NSLog(@"did finish loading, receive data total size: %ld", [self.rssData length]);
+	//NSLog(@"%@", self.rssData);
+	NSXMLParser *parser = [[NSXMLParser alloc] initWithData:self.rssData];
+	parser.delegate = self;
+	[parser parse];
+}
+</code></pre></div><p>首先定义一个Post用语存放解析出来的信息：<div class="highlighter-rouge"><pre class="highlight"><code><span class="k">@interface</span> <span class="nc">Post</span> <span class="p">:</span> <span class="nc">NSObject</span>
+
+<span class="k">@property</span> <span class="p">(</span><span class="n">nonatomic</span><span class="p">,</span> <span class="n">strong</span><span class="p">)</span> <span class="n">NSString</span> <span class="o">*</span><span class="n">title</span><span class="p">;</span>
+<span class="k">@property</span> <span class="p">(</span><span class="n">nonatomic</span><span class="p">,</span> <span class="n">strong</span><span class="p">)</span> <span class="n">NSString</span> <span class="o">*</span><span class="n">link</span><span class="p">;</span>
+<span class="k">@property</span> <span class="p">(</span><span class="n">nonatomic</span><span class="p">,</span> <span class="n">strong</span><span class="p">)</span> <span class="n">NSDate</span> <span class="o">*</span><span class="n">updated</span><span class="p">;</span>
+<span class="k">@property</span> <span class="p">(</span><span class="n">nonatomic</span><span class="p">,</span> <span class="n">strong</span><span class="p">)</span> <span class="n">NSString</span> <span class="o">*</span><span class="n">wid</span><span class="p">;</span>
+<span class="k">@property</span> <span class="p">(</span><span class="n">nonatomic</span><span class="p">,</span> <span class="n">strong</span><span class="p">)</span> <span class="n">NSString</span> <span class="o">*</span><span class="n">content</span><span class="p">;</span>
+
+<span class="k">@end</span>
+</code></pre></div><p>使用一个NSMutableArray存放所有这些posts，当开始解析时，初始化这个array，完成解析时在tableView上展示这些post的标题；因为每一个post在rss数据中是被一个<entry></entry>所包围的，所以在解析的过程中，当遇到开始的<entry>时初始化一个post，遇到</entry>时将这个post插入到array中，遇到其他节点的话，获取数据并填入post中响应的字段。所以实现NSXMLParserDelegate各项方法如下：<div class="highlighter-rouge"><pre class="highlight"><code>#pragma mark - NSXMLParserDelegate
+
+- (void)parserDidStartDocument:(NSXMLParser *)parser
+{
+	self.entries = [[NSMutableArray alloc] init];
+}
+
+- (void)parserDidEndDocument:(NSXMLParser *)parser
+{
+	[self.tableView reloadData];  //解析完成之后在tableView中展示
+}
+
+- (void)parser:(NSXMLParser *)parser didStartElement:(NSString *)elementName namespaceURI:(NSString *)namespaceURI qualifiedName:(NSString *)qName attributes:(NSDictionary *)attributeDict
+{
+//    NSLog(@"element name: %@", elementName);
+	if ([elementName isEqualToString:@"entry"]) {
+    	post = [[Post alloc] init];
+    	parsingItem = YES;
+	}
+}
+
+- (void)parser:(NSXMLParser *)parser didEndElement:(NSString *)elementName namespaceURI:(NSString *)namespaceURI qualifiedName:(NSString *)qName
+{
+//    NSLog(@"element name: %@---", elementName);
+	if ([elementName isEqualToString:@"entry"]) {
+    	[self.entries addObject:post];
+    	NSLog(@"%@", post);
+    	post = nil;
+    	parsingItem = NO;
+	}
+
+	if (parsingItem == YES) {
+    	if ([elementName isEqualToString:@"title"]) {
+        	post.title = currentValue;
+    	} else if ([elementName isEqualToString:@"link"]) {
+        	post.link = currentValue;
+    	} else if ([elementName isEqualToString:@"updated"]) {
+        	//post.updated = ;
+    	} else if ([elementName isEqualToString:@"id"]) {
+        	post.wid = currentValue;
+    	} else if ([elementName isEqualToString:@"content"]) {
+        	post.content = currentValue;
+    	}
+	}
+
+	currentValue = nil;
+}
+
+- (void)parser:(NSXMLParser *)parser foundCharacters:(NSString *)string
+{
+	NSString *tmpValue = [string stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+	if (currentValue == nil) {
+    	currentValue = [[NSMutableString alloc] initWithString:tmpValue];
+	} else {
+    	[currentValue appendString:tmpValue];
+	}
+}
+</code></pre></div><p>可以看出，content字段内容是包含有个粽html标签的博客内容，接下来在跳转到一个页面用UIWebView进行显示。<p>首先处理跳转，在DetailViewController中实现：<div class="highlighter-rouge"><pre class="highlight"><code>#pragma mark - Navigation
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+	ArticleViewController *controller = [[ArticleViewController alloc] init];
+	controller.contentString = [[self.entries objectAtIndex:indexPath.row] content];
+	[self.navigationController pushViewController:controller animated:YES];
+}
+</code></pre></div><p>定义一个AritcleViewController并加入一个UIWebView，在加载阶段设置它要显示的内容为解析出来的content，所以代码如下：<div class="highlighter-rouge"><pre class="highlight"><code>- (void)viewDidLoad {
+	[super viewDidLoad];
+	// Do any additional setup after loading the view.
+
+	UIWebView *content = [[UIWebView alloc] initWithFrame:CGRectMake(40, 160, 600, 500)];
+	[content loadHTMLString:self.contentString baseURL:nil];
+	[self.view addSubview:content];
+
+	self.view.backgroundColor = [UIColor whiteColor];
+42}
+</code></pre></div><p>这样当跳转到这个view时，博客内容就可以显示了。</div></div><div class="panel-body"><h4>Related Posts</h4><ul><li class="relatedPost"> <a href="http://localhost:4000/ios/2014/11/17/%E4%B8%80%E4%B8%AARss%E9%98%85%E8%AF%BB%E5%99%A8%E7%9A%84%E5%AE%9E%E7%8E%B0-model%E5%BC%95%E5%85%A5CoreData.html">一个Rss阅读器的实现-model引入CoreData</a> (Categories: <a href="/category/iOS">iOS</a>)<li class="relatedPost"> <a href="http://localhost:4000/ios/2014/10/30/%E4%B8%80%E4%B8%AARss%E9%98%85%E8%AF%BB%E5%99%A8%E7%9A%84%E5%AE%9E%E7%8E%B0-%E4%B8%8B%E8%BD%BDrss%E6%95%B0%E6%8D%AE.html">一个Rss阅读器的实现-下载rss数据</a> (Categories: <a href="/category/iOS">iOS</a>)<li class="relatedPost"> <a href="http://localhost:4000/ios/2014/10/27/%E4%B8%80%E4%B8%AARss%E9%98%85%E8%AF%BB%E5%99%A8%E7%9A%84%E5%AE%9E%E7%8E%B0-%E5%AE%8C%E6%88%90ui%E6%B5%81%E7%A8%8B.html">一个Rss阅读器的实现-完成ui流程</a> (Categories: <a href="/category/iOS">iOS</a>)<li class="relatedPost"> <a href="http://localhost:4000/ios/2014/10/25/%E4%B8%80%E4%B8%AARss%E9%98%85%E8%AF%BB%E5%99%A8%E7%9A%84%E5%AE%9E%E7%8E%B0-UISplitViewController%E7%9A%84%E4%BD%BF%E7%94%A8.html">一个Rss阅读器的实现-UISplitViewController的使用</a> (Categories: <a href="/category/iOS">iOS</a>)</ul></div><div class="PageNavigation"> <a class="prev" href="/ios/2014/10/30/%E4%B8%80%E4%B8%AARss%E9%98%85%E8%AF%BB%E5%99%A8%E7%9A%84%E5%AE%9E%E7%8E%B0-%E4%B8%8B%E8%BD%BDrss%E6%95%B0%E6%8D%AE.html">&laquo; 一个Rss阅读器的实现-下载rss数据</a> <a class="next" href="/ios/2014/11/17/%E4%B8%80%E4%B8%AARss%E9%98%85%E8%AF%BB%E5%99%A8%E7%9A%84%E5%AE%9E%E7%8E%B0-model%E5%BC%95%E5%85%A5CoreData.html">一个Rss阅读器的实现-model引入CoreData &raquo;</a></div><div class="disqus-comments"><div id="disqus_thread"></div><script type="text/javascript"> /* <![CDATA[ */ var disqus_shortname = "stackproblems"; var disqus_identifier = "http://localhost:4000_一个Rss阅读器的实现-解析rss数据"; var disqus_title = "一个Rss阅读器的实现-解析rss数据"; /* * * DON'T EDIT BELOW THIS LINE * * */ (function() { var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true; dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js'; (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq); })(); /* ]]> */ </script></div><footer> &copy; Liu Hushan - <a href="https://github.com/justvi">https://github.com/justvi</a> - Powered by Jekyll.<div class="btn-github" style="float:right;"> <iframe src="https://ghbtns.com/github-btn.html?user=justvi&repo=justvi.github.io&type=star&count=true" frameborder="0" scrolling="0" width="85" height="20px"></iframe> <iframe src="https://ghbtns.com/github-btn.html?user=justvi&repo=justvi.github.io&type=fork&count=true" frameborder="0" scrolling="0" width="85" height="20px"></iframe></div></footer></div></div><script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script> <script src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script> <script src="/static/js/bootstrap.min.js"></script> <script src="/static/js/super-search.js"></script> <script src="/static/js/thickbox-compressed.js"></script> <script src="/static/js/projects.js"></script>

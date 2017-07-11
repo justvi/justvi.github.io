@@ -1,0 +1,685 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>行动的小矮人</title>
+    <description>一个记录的地方</description>
+    <link>http://localhost:4000/</link>
+    <atom:link href="http://localhost:4000/feed.xml" rel="self" type="application/rss+xml"/>
+    <pubDate>Tue, 11 Jul 2017 13:38:51 +0800</pubDate>
+    <lastBuildDate>Tue, 11 Jul 2017 13:38:51 +0800</lastBuildDate>
+    <generator>Jekyll v3.3.1</generator>
+    
+      <item>
+        <title>一个Rss阅读器的实现-model引入CoreData</title>
+        <description>&lt;p&gt;之前留下一个问题就是，masterViewController的tableViewCell是写死的三个rss地址，不能添加，删除它。那么现在引入model层，使用Core Data来存储定于的rss地址。&lt;/p&gt;
+
+&lt;p&gt;先在工程中加入CoreData框架，然后新建一个Data Model，将其命名为Rss.xcdatamodeld。打开它，增加一个Entity，命名为Subscribe，为它添加一个属性rssUrl，类型为String。然后新建一个NSManagedObject subclass，选择data model中的Subscribe，自动生成了这个类。&lt;/p&gt;
+
+&lt;p&gt;接着在app delegate中引入core data支持。在AppDelegate.h中加入如下代码：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;@property&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;nonatomic&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;readonly&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;strong&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;NSManagedObjectContext&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;managedObjectContext&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;@property&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;nonatomic&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;readonly&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;strong&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;NSManagedObjectModel&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;managedObjectModel&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;@property&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;nonatomic&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;readonly&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;strong&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;NSPersistentStoreCoordinator&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;persistentStoreCoordinator&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;saveContext&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;NSURL&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;applicationDocumentsDirectory&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;并且在AppDelegate.m中编写core data stack代码，这里不列出。注意在managedObjectModel和persistentSotreCoordinator中修改resource参数为自己命名的data model名称，这里为@”Rss”和@”Rss.sqlite”。&lt;/p&gt;
+
+&lt;p&gt;接着进行添加订阅源的代码编写。在MasterViewController.m中添加属性subscribes，用其来存储所有的订阅源&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;@property&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;nonatomic&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;strong&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;NSMutableArray&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;subscribes&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;在viewDidLoad中进行初始化&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;self.subscribes = [NSMutableArray array];
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;修改numberOfRowsInSection为：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;return [_subscribes count];
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;cellForRowAtIndexPath中设置cell的text为subscribe的rssUrl：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;Subscribe *sub = [_subscribes objectAtIndex:indexPath.row];
+cell.textLabel.text = sub.rssUrl;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;在MasterViewController.h中添加增加订阅的方法，然后在.m中实现：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;- (void)addSubscribe:(NSString *)url
+{
+	Subscribe *sub = [NSEntityDescription insertNewObjectForEntityForName:@&quot;Subscribe&quot; inManagedObjectContext:[APP_DELEGATE managedObjectContext]];
+	if (sub) {
+    	sub.rssUrl = url;
+    	NSError *err = nil;
+    	[[APP_DELEGATE managedObjectContext] save:&amp;amp;err];
+    	if (!err) {
+        	[self.subscribes addObject:sub];
+        	[self.tableView reloadData];
+    	}
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;接着在AddRssViewController中的键盘返回处理中想master发送这个消息：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;MasterViewController *controller = [self.navigationController.viewControllers objectAtIndex:0];
+if (self.textInput.text) {
+	[controller addSubscribe:self.textInput.text];
+}
+[self.navigationController popViewControllerAnimated:YES];
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;这样，添加订阅源的处理就完成了。接下来处理删除操作。&lt;/p&gt;
+
+&lt;p&gt;首先修改master view controller的canEditRowAtIndexPath返回YES使table处于可编辑状态。然后修改editingStyleForRowAtIndexPath返回UITableViewCellEditingStyleDelete使之之能进行删除的操作。然后修改commitEditingStyle来进行提交时的处理。&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;if (editingStyle == UITableViewCellEditingStyleDelete) {
+    // Delete the row from the data source
+    [self.subscribes removeObjectAtIndex:indexPath.row];
+    UITableViewCell *cell = [self.tableView cellForRowAtIndexPath:indexPath];
+    [APP_DELEGATE deleteSubscribe:cell.textLabel.text];
+    [tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationFade];
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;这里去的url作为参数传入appdelegate处理删除的方法中。在appdelegate中实现删除如下：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;- (void)deleteSubscribe:(NSString *)url
+{
+	NSArray *subs = [self getSubscribes];
+	for (Subscribe *sub in subs) {
+    	if ([sub.rssUrl isEqualToString:url]) {
+        	[self.managedObjectContext deleteObject:sub];
+        	if ([sub isDeleted]) {
+            	NSError *err = nil;
+            	[self.managedObjectContext save:&amp;amp;err];
+        	}
+    	}
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;那么删除的处理也完成了。但是当添加了一些订阅源，然后重启应用程序时，添加的并没有在master中显示出来，因为在master初始化显示时并没有取出这些数据。现在来添加它：&lt;/p&gt;
+
+&lt;p&gt;在AppDelegate中实现取得所有订阅的方法：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;- (NSArray *)getSubscribes
+{
+	NSFetchRequest *req = [[NSFetchRequest alloc] init];
+	NSEntityDescription *entity = [NSEntityDescription entityForName:@&quot;Subscribe&quot; inManagedObjectContext:self.managedObjectContext];
+	[req setEntity:entity];
+
+	NSError *err = nil;
+	NSArray *subs = [self.managedObjectContext executeFetchRequest:req error:&amp;amp;err];
+
+	return subs;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;然后再master view controller的viewDidLoad中subscribes初始化后添加：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;[self.subscribes addObjectsFromArray:[APP_DELEGATE getSubscribes]];
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;这样，重启时已添加的订阅也显示出来了。&lt;/p&gt;
+
+&lt;p&gt;至此，rss阅读器大致的功能都实现了。&lt;/p&gt;
+</description>
+        <pubDate>Mon, 17 Nov 2014 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/ios/2014/11/17/%E4%B8%80%E4%B8%AARss%E9%98%85%E8%AF%BB%E5%99%A8%E7%9A%84%E5%AE%9E%E7%8E%B0-model%E5%BC%95%E5%85%A5CoreData.html</link>
+        <guid isPermaLink="true">http://localhost:4000/ios/2014/11/17/%E4%B8%80%E4%B8%AARss%E9%98%85%E8%AF%BB%E5%99%A8%E7%9A%84%E5%AE%9E%E7%8E%B0-model%E5%BC%95%E5%85%A5CoreData.html</guid>
+        
+        
+        <category>iOS</category>
+        
+      </item>
+    
+      <item>
+        <title>一个Rss阅读器的实现-解析rss数据</title>
+        <description>&lt;p&gt;解析数据使用NSXMLParser并将其代理设置为DetailViewController，在其中实现它的代理方法。所以在数据下载完成后实现解析，修改connectionDidFinishLoading如下：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;- (void)connectionDidFinishLoading:(NSURLConnection *)connection
+{
+	NSLog(@&quot;did finish loading, receive data total size: %ld&quot;, [self.rssData length]);
+	//NSLog(@&quot;%@&quot;, self.rssData);
+	NSXMLParser *parser = [[NSXMLParser alloc] initWithData:self.rssData];
+	parser.delegate = self;
+	[parser parse];
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;首先定义一个Post用语存放解析出来的信息：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;@interface&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;Post&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;NSObject&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;@property&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;nonatomic&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;strong&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;NSString&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;title&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;@property&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;nonatomic&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;strong&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;NSString&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;link&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;@property&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;nonatomic&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;strong&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;NSDate&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;updated&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;@property&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;nonatomic&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;strong&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;NSString&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;wid&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;@property&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;nonatomic&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;strong&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;NSString&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;content&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;@end&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;使用一个NSMutableArray存放所有这些posts，当开始解析时，初始化这个array，完成解析时在tableView上展示这些post的标题；因为每一个post在rss数据中是被一个&lt;entry&gt;&lt;/entry&gt;所包围的，所以在解析的过程中，当遇到开始的&lt;entry&gt;时初始化一个post，遇到&lt;/entry&gt;时将这个post插入到array中，遇到其他节点的话，获取数据并填入post中响应的字段。所以实现NSXMLParserDelegate各项方法如下：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;#pragma mark - NSXMLParserDelegate
+
+- (void)parserDidStartDocument:(NSXMLParser *)parser
+{
+	self.entries = [[NSMutableArray alloc] init];
+}
+
+- (void)parserDidEndDocument:(NSXMLParser *)parser
+{
+	[self.tableView reloadData];  //解析完成之后在tableView中展示
+}
+
+- (void)parser:(NSXMLParser *)parser didStartElement:(NSString *)elementName namespaceURI:(NSString *)namespaceURI qualifiedName:(NSString *)qName attributes:(NSDictionary *)attributeDict
+{
+//    NSLog(@&quot;element name: %@&quot;, elementName);
+	if ([elementName isEqualToString:@&quot;entry&quot;]) {
+    	post = [[Post alloc] init];
+    	parsingItem = YES;
+	}
+}
+
+- (void)parser:(NSXMLParser *)parser didEndElement:(NSString *)elementName namespaceURI:(NSString *)namespaceURI qualifiedName:(NSString *)qName
+{
+//    NSLog(@&quot;element name: %@---&quot;, elementName);
+	if ([elementName isEqualToString:@&quot;entry&quot;]) {
+    	[self.entries addObject:post];
+    	NSLog(@&quot;%@&quot;, post);
+    	post = nil;
+    	parsingItem = NO;
+	}
+
+	if (parsingItem == YES) {
+    	if ([elementName isEqualToString:@&quot;title&quot;]) {
+        	post.title = currentValue;
+    	} else if ([elementName isEqualToString:@&quot;link&quot;]) {
+        	post.link = currentValue;
+    	} else if ([elementName isEqualToString:@&quot;updated&quot;]) {
+        	//post.updated = ;
+    	} else if ([elementName isEqualToString:@&quot;id&quot;]) {
+        	post.wid = currentValue;
+    	} else if ([elementName isEqualToString:@&quot;content&quot;]) {
+        	post.content = currentValue;
+    	}
+	}
+
+	currentValue = nil;
+}
+
+- (void)parser:(NSXMLParser *)parser foundCharacters:(NSString *)string
+{
+	NSString *tmpValue = [string stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+	if (currentValue == nil) {
+    	currentValue = [[NSMutableString alloc] initWithString:tmpValue];
+	} else {
+    	[currentValue appendString:tmpValue];
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;可以看出，content字段内容是包含有个粽html标签的博客内容，接下来在跳转到一个页面用UIWebView进行显示。&lt;/p&gt;
+
+&lt;p&gt;首先处理跳转，在DetailViewController中实现：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;#pragma mark - Navigation
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+	ArticleViewController *controller = [[ArticleViewController alloc] init];
+	controller.contentString = [[self.entries objectAtIndex:indexPath.row] content];
+	[self.navigationController pushViewController:controller animated:YES];
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;定义一个AritcleViewController并加入一个UIWebView，在加载阶段设置它要显示的内容为解析出来的content，所以代码如下：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;- (void)viewDidLoad {
+	[super viewDidLoad];
+	// Do any additional setup after loading the view.
+
+	UIWebView *content = [[UIWebView alloc] initWithFrame:CGRectMake(40, 160, 600, 500)];
+	[content loadHTMLString:self.contentString baseURL:nil];
+	[self.view addSubview:content];
+
+	self.view.backgroundColor = [UIColor whiteColor];
+42}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;这样当跳转到这个view时，博客内容就可以显示了。&lt;/p&gt;
+
+</description>
+        <pubDate>Mon, 10 Nov 2014 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/ios/2014/11/10/%E4%B8%80%E4%B8%AARss%E9%98%85%E8%AF%BB%E5%99%A8%E7%9A%84%E5%AE%9E%E7%8E%B0-%E8%A7%A3%E6%9E%90rss%E6%95%B0%E6%8D%AE.html</link>
+        <guid isPermaLink="true">http://localhost:4000/ios/2014/11/10/%E4%B8%80%E4%B8%AARss%E9%98%85%E8%AF%BB%E5%99%A8%E7%9A%84%E5%AE%9E%E7%8E%B0-%E8%A7%A3%E6%9E%90rss%E6%95%B0%E6%8D%AE.html</guid>
+        
+        
+        <category>iOS</category>
+        
+      </item>
+    
+      <item>
+        <title>一个Rss阅读器的实现-下载rss数据</title>
+        <description>&lt;p&gt;接下来实现下载rss数据的功能。在master列表中列出各个订阅的rss地址，当点击时，下载数据并解析在detail的列表上显示。&lt;/p&gt;
+
+&lt;p&gt;技术上涉及到NSURL、NSURLRequest、NSURLConnection、NSURLRsponse这四个概念和同步、异步、队列式异步三种方法，这里采用异步下载的方法。&lt;/p&gt;
+
+&lt;p&gt;首先修改master view controller的cellForRowAtIndexPath，使cell显示正确的rss地址：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;if (indexPath.row == 0) {
+    cell.textLabel.text = @&quot;http://blog.devtang.com/atom.xm&quot;;
+} else if (indexPath.row == 1) {
+    cell.textLabel.text = @&quot;http://wangzz.github.io/atom.xml&quot;;
+} else {
+    cell.textLabel.text = @&quot;http://iiiyu.com/atom.xml&quot;;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;因为目前是想在detail中完成下载并解析，所以让detailViewController实现NSURLConnectionDelegate协议：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;@interface DetailViewController : UITableViewController &amp;lt;UISplitViewControllerDelegate, NSURLConnectionDelegate&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;并加入两个属性：conn用来表示连接，rssData表示接收到的数据：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;@property&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;nonatomic&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;strong&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;NSURLConnection&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;conn&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;@property&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;nonatomic&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;strong&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;NSMutableData&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;rssData&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;实现开始下载方法如下：发送此消息时，初始化rssData用以接收数据，并开始下载：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;- (void)start
+{
+	NSURL *url = [NSURL URLWithString:self.textInfo];
+	NSURLRequest *request = [NSURLRequest requestWithURL:url];
+	if (self.rssData == nil) {
+	    self.rssData = [[NSMutableData alloc] init];
+	} else {
+	    [self.rssData setLength:0];
+	}
+	self.conn = [NSURLConnection connectionWithRequest:request delegate:self];
+	[self.conn start];
+	NSLog(@&quot;start downloading: %@&quot;, self.textInfo);
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;接下来实现NSURLConnectionDelegate的一些方法：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;- (void)connection:(NSURLConnection *)connection didReceiveResponse:(NSURLResponse *)response
+{
+	[self.rssData setLength:0];
+	NSHTTPURLResponse *resp = (NSHTTPURLResponse *)response;
+	if (resp.statusCode == 200) {
+    	NSLog(@&quot;success receive response&quot;);
+	} else {
+    	[connection cancel];
+   		NSLog(@&quot;did receive response&quot;);
+	}
+}
+
+- (void)connection:(NSURLConnection *)connection didReceiveData:(NSData *)data
+{
+	NSLog(@&quot;did receive data size: %ld&quot;, [data length]);
+	[self.rssData appendData:data];
+}
+
+- (void)connectionDidFinishLoading:(NSURLConnection *)connection
+{
+	NSLog(@&quot;did finish loading, receive data total size: %ld&quot;, [self.rssData length]);
+	NSLog(@&quot;%@&quot;, self.rssData);
+}
+
+- (void)connection:(NSURLConnection *)connection didFailWithError:(NSError *)error
+{
+	NSLog(@&quot;failed: %@&quot;, error);
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;当运行起来后，点击master第一行时，有如下打印：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;2014-10-30 14:45:59.536 ViRss[1996:83215] start downloading: http://blog.devtang.com/atom.xml
+2014-10-30 14:45:59.560 ViRss[1996:83215] success receive response
+2014-10-30 14:45:59.560 ViRss[1996:83215] did receive data size: 150280
+2014-10-30 14:45:59.562 ViRss[1996:83215] did finish loading, receive data total size: 150280
+2014-10-30 14:45:59.583 ViRss[1996:83215] &amp;lt;3c3f786d 6c207665 7273696f 6e3d2231 2e302220  
+......
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;说明数据已下载完成，接下里就是解析并展示了&lt;/p&gt;
+</description>
+        <pubDate>Thu, 30 Oct 2014 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/ios/2014/10/30/%E4%B8%80%E4%B8%AARss%E9%98%85%E8%AF%BB%E5%99%A8%E7%9A%84%E5%AE%9E%E7%8E%B0-%E4%B8%8B%E8%BD%BDrss%E6%95%B0%E6%8D%AE.html</link>
+        <guid isPermaLink="true">http://localhost:4000/ios/2014/10/30/%E4%B8%80%E4%B8%AARss%E9%98%85%E8%AF%BB%E5%99%A8%E7%9A%84%E5%AE%9E%E7%8E%B0-%E4%B8%8B%E8%BD%BDrss%E6%95%B0%E6%8D%AE.html</guid>
+        
+        
+        <category>iOS</category>
+        
+      </item>
+    
+      <item>
+        <title>一个Rss阅读器的实现-完成ui流程</title>
+        <description>&lt;p&gt;完成ui流程设计主要做到下面几个点：&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;master展示数据，点击一行后detail展示该数据（这里先模拟数据）&lt;/li&gt;
+  &lt;li&gt;master中可以进行table view的edit操纵，主要是删除&lt;/li&gt;
+  &lt;li&gt;master导航到另外的view进行添加条目的操作&lt;/li&gt;
+  &lt;li&gt;detail导航到另外的view展示具体的rss条目信息&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h2 id=&quot;masterdetail&quot;&gt;master及detail展示数据&lt;/h2&gt;
+
+&lt;p&gt;首先修改master的numberOfSectionsInTableView和numberOfRowsInSection，分别return 1和return 3。然后修改cellForRowAtIndexPath如下&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;static NSString *identifier = @&quot;rss&quot;;
+UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:identifier forIndexPath:indexPath];
+if (cell == nil) {
+    cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:identifier];
+}
+cell.textLabel.text = @&quot;hahahahahahah&quot;;
+return cell;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;此时会报如下的错误：’unable to dequeue a cell with identifier rss - must register a nib or a class for the identifier or connect a prototype cell in a storyboard’，在之前学习iOS开发的过程中都是使用storyboard来配置界面，在使用表格视图的prototype cell可以在Attributes inspecor中设置cell重用的identifer，那么在使用代码时，按照错误提示为tableView注册一个UITableViewCell类如下：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;[self.tableView registerClass:[UITableViewCell class] forCellReuseIdentifier:identifier];
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;在master中就能显示三行数据了。&lt;/p&gt;
+
+&lt;p&gt;接下来处理在点击master中的一行时，detail显示相应信息，具体到rss阅读器中，master显示定于源，点击后detail显示文章列表，在master中实现如下方法&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+	DetailViewController *controller = (DetailViewController *)self.splitViewController.delegate;
+	controller.textInfo = [self.tableView cellForRowAtIndexPath:indexPath].textLabel.text;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;当然要先在DetailViewController中声明一个类型为NSString的属性textInfo&lt;/p&gt;
+
+&lt;p&gt;这时依照和master中同样的方法实现UITableViewDataSource中的几个方法，在cellForRowAtIndexPath中加入：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;cell.textLabel.text = self.textInfo;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;这样当点击master中的一行时，就取得字符串信息赋给detail中的textInfo。运行之，发现点击时detail中并没有相应的显示，因为当设置textInfo时，数据是更新了，但是table视图并没有去加载它，所以重写textInfo的setter方法：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;- (void)setTextInfo:(NSString *)textInfo
+{
+	if (textInfo != _textInfo) {
+    	_textInfo = textInfo;
+    	[self.tableView reloadData];
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;此时效果达到&lt;/p&gt;
+
+&lt;h2 id=&quot;mastertableviewedit&quot;&gt;master中tableView的edit操作&lt;/h2&gt;
+
+&lt;p&gt;为了实现edit操作（这里主要是删除），要实现UITableViewDataSource的canEditRowAtIndexPath和commitEditingStyle 以及UITableViewDelegate的editingStyleForRowAtIndexPath方法。第一个表示在当前行是否可以edit，第二个处理编辑操作，第三个表示当前行的编辑选项，如下：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;- (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath {
+	// Return NO if you do not want the specified item to be editable.
+	return YES;
+}
+
+- (UITableViewCellEditingStyle)tableView:(UITableView *)tableView editingStyleForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+	return UITableViewCellEditingStyleDelete;
+}
+
+// Override to support editing the table view.
+- (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath {
+	if (editingStyle == UITableViewCellEditingStyleDelete) {
+    	[tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationFade];
+	} else if (editingStyle == UITableViewCellEditingStyleInsert) {
+    
+	}   
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;这样就可以删除当前行了，运行之，发现报这样的错误： The number of rows contained in an existing section after the update (3) must be equal to the number of rows contained in that section before the update (3), plus or minus the number of rows inserted or deleted from that section (0 inserted, 1 deleted) and plus or minus the number of rows moved into or out of that section&lt;/p&gt;
+
+&lt;p&gt;是因为操作后已经删除了这一行，但是在numberOfRowsInSection中返回的是固定的行数3，所以会抱错，这里先不管，后面引入model层时这里返回model里的数据条数，当操作发生时，这里也是实时更新的&lt;/p&gt;
+
+&lt;h2 id=&quot;masterview&quot;&gt;master导航到另外的view进行添加条目的操作&lt;/h2&gt;
+
+&lt;p&gt;因为在appDelegate中设置splitViewController的master controller时就将MasterVeiwController对象放置在一个navigationController中，要实现导航的操作就要用到pushViewController了。&lt;/p&gt;
+
+&lt;p&gt;首先新建一个UIViewController类AddRssViewController，在其中放置一个UITextField用于输入rss源地址：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;- (void)viewDidLoad {
+	[super viewDidLoad];
+
+	UITextField *textInput = [[UITextField alloc] initWithFrame:CGRectMake(10, 120, 300, 40)];
+	[textInput setBorderStyle:UITextBorderStyleRoundedRect];
+	[self.view addSubview:textInput];
+	self.view.backgroundColor = [UIColor whiteColor];
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;然后在master的navigation bar上增加一个按钮，用于跳转到add视图：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAdd target:self action:@selector(toAdd)];
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;实现toAdd方法：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;- (void)toAdd
+{
+	AddRssViewController *controller = [[AddRssViewController alloc] init];
+	[self.navigationController pushViewController:controller animated:YES];
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;这样当点击”+”时，master视图消失，add视图出现&lt;/p&gt;
+
+&lt;p&gt;接下来处理UITextField获取输入操作，将输入传至master因为没有引入model的原因暂时放置。AddRssViewController实现UITextFieldDelegate协议的textFieldShouldReturn方法：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;self.textInput.delegate = self;
+
+- (BOOL)textFieldShouldReturn:(UITextField *)textField
+{
+	[self.textInput resignFirstResponder];
+	NSLog(@&quot;%@&quot;, self.textInput.text);
+	return YES;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;当输入并按return键时，log输出了键盘输入的字符串。&lt;/p&gt;
+
+&lt;h2 id=&quot;detailviewrss&quot;&gt;detail导航到另外的view展示具体的rss文章信息&lt;/h2&gt;
+
+&lt;p&gt;这里的操作和master导航到add视图的操作一样，只不过是在点击表格的某一行时跳转的，所以要实现didSelectRowAtIndexPath方法：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+	ArticleViewController *controller = [[ArticleViewController alloc] init];
+	[self.navigationController pushViewController:controller animated:YES];
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;这样一个大致的操作流程就完成了，一些细节操作将在后面完善&lt;/p&gt;
+</description>
+        <pubDate>Mon, 27 Oct 2014 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/ios/2014/10/27/%E4%B8%80%E4%B8%AARss%E9%98%85%E8%AF%BB%E5%99%A8%E7%9A%84%E5%AE%9E%E7%8E%B0-%E5%AE%8C%E6%88%90ui%E6%B5%81%E7%A8%8B.html</link>
+        <guid isPermaLink="true">http://localhost:4000/ios/2014/10/27/%E4%B8%80%E4%B8%AARss%E9%98%85%E8%AF%BB%E5%99%A8%E7%9A%84%E5%AE%9E%E7%8E%B0-%E5%AE%8C%E6%88%90ui%E6%B5%81%E7%A8%8B.html</guid>
+        
+        
+        <category>iOS</category>
+        
+      </item>
+    
+      <item>
+        <title>一个Rss阅读器的实现-UISplitViewController的使用</title>
+        <description>&lt;p&gt;缘起：学习iOS开发一段时间了，一直想找个东西练练手，正好平时阅读blog都用rss阅读器，所以索性就选定这个了。&lt;/p&gt;
+
+&lt;p&gt;首先建立一个新的Single View Application（为什么不用Master-Detail Application，因为不想用storyboard或者xib的方式，而直接采用编写代码的方式，这样可以对iOS开发中涉及到的技术有更好的理解），选定语言为Objective-c，设备为iPad，暂不使用core data，这样就新建了一个工程。&lt;/p&gt;
+
+&lt;p&gt;如果通过代码方式来进行编写，其中的Main.storyboard和LaunchSereen.xib，甚至生成的ViewController.h(.m)都是不需要的，所以将这四项删掉。这个时候运行app时会报如下的错误：
+&amp;gt; Terminating app due to uncaught exception ‘NSInvalidArgumentException’, reason: ‘Could not find a storyboard named ‘Main’ in bundle NSBundle&lt;/p&gt;
+
+&lt;p&gt;在工程设置的Info选项中，找到”Main storyboard file base name”，将其删掉，再运行时就不会报错了。此时的程序界面是一片黑色，这时将UISplitViewController作为根视图控制器：在AppDelegate.m的didFinishLaunchingWithOptions中添加如下代码：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;UISplitViewController *splitViewController = [[UISplitViewController alloc] init];
+UITableViewController *master = [[UITableViewController alloc] init];
+UITableViewController *detail = [[UITableViewController alloc] init];
+splitViewController.viewControllers = [NSArray arrayWithObjects:master, detail, nil];
+
+self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
+self.window.rootViewController = splitViewController;
+self.window.backgroundColor = [UIColor whiteColor];
+[self.window makeKeyAndVisible];
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;加入master及detail是因为UISplitViewController必须设置它的viewControllers属性。&lt;/p&gt;
+
+&lt;p&gt;这样，一个基础的界面就出来了。但是有个问题，当旋转设备为纵向时，并没有显示master表格的按钮。&lt;/p&gt;
+
+&lt;p&gt;新建两个UITableViewController：MasterViewController和DetailViewController做为UISplitViewController的viewController设置。并且修改didFinishLaunchingWithOptions如下：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;MasterViewController *master = [[MasterViewController alloc] init];
+DetailViewController *detail = [[DetailViewController alloc] init];
+UINavigationController *masterNav = [[UINavigationController alloc] initWithRootViewController:master];
+UINavigationController *detailNav = [[UINavigationController alloc] initWithRootViewController:detail];
+splitViewController.viewControllers = [NSArray arrayWithObjects:masterNav, detailNav, nil];
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;加入navigation controller是为了后面的操作做准备，并且引入了导航栏。&lt;/p&gt;
+
+&lt;p&gt;为了能够在detail视图中点击按钮时弹出master视图，要将DetailViewController实现UISplitViewControllerDelegate的关于显示与隐藏的方法。在DetailViewController中声明如下属性：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;@property&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;nonatomic&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;strong&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;UIPopoverController&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;navigationPopoverController&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;在appDelegate中设置splitViewController的代理为detail：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;[splitViewController setDelegate:detail];
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;实现以下两个方法：&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;- (void)splitViewController:(UISplitViewController *)svc willHideViewController:(UIViewController *)aViewController withBarButtonItem:(UIBarButtonItem *)barButtonItem forPopoverController:(UIPopoverController *)pc
+{
+	barButtonItem.title = @&quot;master&quot;;
+	self.navigationPopoverController = pc;
+	self.navigationItem.leftBarButtonItem = barButtonItem;
+}
+
+- (void)splitViewController:(UISplitViewController *)svc willShowViewController:(UIViewController *)aViewController invalidatingBarButtonItem:(UIBarButtonItem *)barButtonItem
+{
+	self.navigationPopoverController = nil;
+	self.navigationItem.leftBarButtonItem = nil;
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;这样，当选择设备为竖向时，点击master按钮，就从左侧弹出master视图。&lt;/p&gt;
+
+&lt;p&gt;至此，一个大致的表现形式就出来了。&lt;/p&gt;
+
+</description>
+        <pubDate>Sat, 25 Oct 2014 00:00:00 +0800</pubDate>
+        <link>http://localhost:4000/ios/2014/10/25/%E4%B8%80%E4%B8%AARss%E9%98%85%E8%AF%BB%E5%99%A8%E7%9A%84%E5%AE%9E%E7%8E%B0-UISplitViewController%E7%9A%84%E4%BD%BF%E7%94%A8.html</link>
+        <guid isPermaLink="true">http://localhost:4000/ios/2014/10/25/%E4%B8%80%E4%B8%AARss%E9%98%85%E8%AF%BB%E5%99%A8%E7%9A%84%E5%AE%9E%E7%8E%B0-UISplitViewController%E7%9A%84%E4%BD%BF%E7%94%A8.html</guid>
+        
+        
+        <category>iOS</category>
+        
+      </item>
+    
+      <item>
+        <title>hash学习</title>
+        <description>&lt;h3 id=&quot;section&quot;&gt;什么是散列：&lt;/h3&gt;
+
+&lt;p&gt;一种高效的数据存储与检索技术，普通数组概念的推广，散列表不把关键值作为数组下标，而是通过设计好的散列函数，将关键值映射到数组下标范围内的一个索引值，通过这个索引值来完成对值的插入、查找、删除等操作。&lt;/p&gt;
+
+&lt;p&gt;实际情况中，因为散列表的下标范围通常小于实际存储的数据量，所以难免出现不同的关键值散列到同一个索引位置的情况，这时就称发生了冲突，解决冲突可以通过两个方法来进行：&lt;/p&gt;
+
+&lt;p&gt;设计好的散列函数，能将关键字均匀的散列到表中；
+采用某种冲突解决方法&lt;/p&gt;
+
+&lt;h3 id=&quot;section-1&quot;&gt;散列函数&lt;/h3&gt;
+
+&lt;p&gt;简单一致散列假设：任何关键字散列到表中每个位置的可能性是相同的，且散列到某个位置的可能性与其他关键字是独立无关的&lt;/p&gt;
+
+&lt;p&gt;将关键字转换为数字：为什么要这样做呢，因为计算索引值时通常是对数字来进行的，而关键字可能是字符串等复杂的数据结构，所以必须通过某种转换将其解释为数字来进行后续计算。&lt;/p&gt;
+
+&lt;p&gt;除法散列：h(k) = k mod m; 
+其中m的选取很关键，m不宜为2的幂，常选取为与2的整数幂不太接近的常数
+乘法散列: h(k) = m(kA mod 1) (小于此值的最大整数)
+m一般为2的某个幂，A是大于0小于1的某个常数
+全域散列：在一组散列函数中随机的选取一个，使之独立于要存储的关键字，随机化保证了没有哪一种输入会始终导致最坏情况性态，同时对于不同时刻的同一样的输入，每次执行时的性态也是不一样的
+### 冲突解决&lt;/p&gt;
+
+&lt;h4 id=&quot;section-2&quot;&gt;链接法&lt;/h4&gt;
+&lt;p&gt;链接法中，当发生不同的关键字散列到同一个索引位置时，将其放到一个链表中，通过在链表头执行插入操作来进行。在简单一致散列假设下，采用链接法解决冲突的散列表一次不成功查找和一次成功查找的期望时间为O(1+a) (a=n/m一个链中平均节点数)&lt;/p&gt;
+
+&lt;h4 id=&quot;section-3&quot;&gt;开放寻址法&lt;/h4&gt;
+&lt;p&gt;在开放寻址法中，当到来一个对于某个关键字的某种请求时（插入、查找、删除），按照某散列函数计算的探测序列对表中的相应位置上的状态与请求进行匹配，当符合请求时，执行相应的操作。&lt;/p&gt;
+
+&lt;p&gt;当执行查找时，在探测序列各节点上进行以下操作：若节点key与查找的key相同，则返回节点；若节点未存储元素，则返回；若以前存储过但已被删除，则探测下一个序列节点直到找到或为空。&lt;/p&gt;
+
+&lt;p&gt;插入操作基于查找，对于查找返回的结果要么为空要么匹配到了，对于空的，则在此位置插入，匹配的则更新节点的属性。&lt;/p&gt;
+
+&lt;p&gt;删除时不能直接删除查找到的元素，因为如果直接删除的话，如果后来到来一个查找操作，而此节点位置正好在探测序列上，探测在此处终止而无法对序列后续节点进行探测。&lt;/p&gt;
+</description>
+        <pubDate>Thu, 04 Aug 2011 22:20:00 +0800</pubDate>
+        <link>http://localhost:4000/hash/2011/08/04/hash%E5%AD%A6%E4%B9%A0.html</link>
+        <guid isPermaLink="true">http://localhost:4000/hash/2011/08/04/hash%E5%AD%A6%E4%B9%A0.html</guid>
+        
+        
+        <category>hash</category>
+        
+      </item>
+    
+  </channel>
+</rss>

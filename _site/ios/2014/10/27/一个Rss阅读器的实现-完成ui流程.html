@@ -1,0 +1,67 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="shortcut icon" href="/static/img/favicon.ico" /><title>一个Rss阅读器的实现-完成ui流程 - 行动的小矮人</title><meta name="author" content="Liu Hushan" /><meta name="description" content="一个Rss阅读器的实现-完成ui流程" /><meta name="keywords" content="一个Rss阅读器的实现-完成ui流程, 行动的小矮人, iOS" /><link rel="alternate" type="application/rss+xml" title="RSS" href="/feed.xml"><meta content="" property="fb:app_id"><meta content="行动的小矮人" property="og:site_name"><meta content="一个Rss阅读器的实现-完成ui流程" property="og:title"><meta content="article" property="og:type"><meta content="一个记录的地方" property="og:description"><meta content="http://localhost:4000/ios/2014/10/27/%E4%B8%80%E4%B8%AARss%E9%98%85%E8%AF%BB%E5%99%A8%E7%9A%84%E5%AE%9E%E7%8E%B0-%E5%AE%8C%E6%88%90ui%E6%B5%81%E7%A8%8B.html" property="og:url"><meta content="2014-10-27T00:00:00+08:00" property="article:published_time"><meta content="http://localhost:4000/about/" property="article:author"><meta content="http://localhost:4000/static/img/avatar.jpg" property="og:image"><meta content="iOS" property="article:section"><meta name="twitter:card" content="summary"><meta name="twitter:site" content="@"><meta name="twitter:creator" content="@"><meta name="twitter:title" content="一个Rss阅读器的实现-完成ui流程"><meta name="twitter:url" content="http://localhost:4000/ios/2014/10/27/%E4%B8%80%E4%B8%AARss%E9%98%85%E8%AF%BB%E5%99%A8%E7%9A%84%E5%AE%9E%E7%8E%B0-%E5%AE%8C%E6%88%90ui%E6%B5%81%E7%A8%8B.html"><meta name="twitter:description" content="一个记录的地方"><link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" integrity="sha384-T8Gy5hrqNKT+hzMclPo118YTQO6cYprQmhrYwIiQ/3axmI1hQomh7Ud2hPOy8SP1" crossorigin="anonymous"><link rel="stylesheet" href="/static/css/syntax.css"><link href="/static/css/bootstrap.min.css" rel="stylesheet"><link href="https://fonts.googleapis.com/css?family=Roboto+Condensed:400,300italic,300,400italic,700&amp;subset=latin,latin-ext" rel="stylesheet" type="text/css"><link rel="stylesheet" href="/static/css/super-search.css"><link rel="stylesheet" href="/static/css/thickbox.css"><link rel="stylesheet" href="/static/css/projects.css"><link rel="stylesheet" href="/static/css/main.css"> <script> (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){ (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o), m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m) })(window,document,'script','https://www.google-analytics.com/analytics.js','ga'); ga('create', 'UA-XXXXXXXX-Y', 'auto'); ga('send', 'pageview'); </script><body><div class="container"><div class="col-sm-3"><div class="fixed-condition"> <a href="/"><img class="profile-avatar" src="/static/img/avatar.jpg" height="75px" width="75px" /></a><h1 class="author-name">Liu Hushan</h1><div class="profile-about"> 篮球，机械键盘，手工皮具，代码</div><div class="social"><ul><li><a href="#" target="_blank"><i class="fa fa-facebook"></i></a><li><a href="https://twitter.com/justvi" target="_blank"><i class="fa fa-twitter"></i></a><li><a href="https://www.linkedin.com/in/hushan-liu-4915aa59/" target="_blank"><i class="fa fa-linkedin"></i></a><li><a href="https://github.com/justvi" target="_blank"><i class="fa fa-github"></i></a></ul></div><div class="search" id="js-search"> <input type="text" placeholder="(sitemap)~$ type to search" class="search__input form-control" id="js-search__input"><ul class="search__results" id="js-search__results"></ul></div><hr /><ul class="sidebar-nav"> <strong>Navigation</strong><li><a href="/">Home</a><li><a class="about" href="/about/">About Me</a><li><a class="about" href="/feed.xml">XML Feed</a></ul></div></div><div class="col-sm-8 col-offset-1 main-layout"><header class="post-header"><h1 class="post-title">一个Rss阅读器的实现-完成ui流程</h1></header><span class="time">27 Oct 2014</span> <span class="categories"> &raquo; <a href="/category/iOS">iOS</a> </span><div class="content"><div class="post"><p>完成ui流程设计主要做到下面几个点：<ol><li>master展示数据，点击一行后detail展示该数据（这里先模拟数据）<li>master中可以进行table view的edit操纵，主要是删除<li>master导航到另外的view进行添加条目的操作<li>detail导航到另外的view展示具体的rss条目信息</ol><h2 id="masterdetail">master及detail展示数据</h2><p>首先修改master的numberOfSectionsInTableView和numberOfRowsInSection，分别return 1和return 3。然后修改cellForRowAtIndexPath如下<div class="highlighter-rouge"><pre class="highlight"><code>static NSString *identifier = @"rss";
+UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:identifier forIndexPath:indexPath];
+if (cell == nil) {
+    cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:identifier];
+}
+cell.textLabel.text = @"hahahahahahah";
+return cell;
+</code></pre></div><p>此时会报如下的错误：’unable to dequeue a cell with identifier rss - must register a nib or a class for the identifier or connect a prototype cell in a storyboard’，在之前学习iOS开发的过程中都是使用storyboard来配置界面，在使用表格视图的prototype cell可以在Attributes inspecor中设置cell重用的identifer，那么在使用代码时，按照错误提示为tableView注册一个UITableViewCell类如下：<div class="highlighter-rouge"><pre class="highlight"><code>[self.tableView registerClass:[UITableViewCell class] forCellReuseIdentifier:identifier];
+</code></pre></div><p>在master中就能显示三行数据了。<p>接下来处理在点击master中的一行时，detail显示相应信息，具体到rss阅读器中，master显示定于源，点击后detail显示文章列表，在master中实现如下方法<div class="highlighter-rouge"><pre class="highlight"><code>- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+	DetailViewController *controller = (DetailViewController *)self.splitViewController.delegate;
+	controller.textInfo = [self.tableView cellForRowAtIndexPath:indexPath].textLabel.text;
+}
+</code></pre></div><p>当然要先在DetailViewController中声明一个类型为NSString的属性textInfo<p>这时依照和master中同样的方法实现UITableViewDataSource中的几个方法，在cellForRowAtIndexPath中加入：<div class="highlighter-rouge"><pre class="highlight"><code>cell.textLabel.text = self.textInfo;
+</code></pre></div><p>这样当点击master中的一行时，就取得字符串信息赋给detail中的textInfo。运行之，发现点击时detail中并没有相应的显示，因为当设置textInfo时，数据是更新了，但是table视图并没有去加载它，所以重写textInfo的setter方法：<div class="highlighter-rouge"><pre class="highlight"><code>- (void)setTextInfo:(NSString *)textInfo
+{
+	if (textInfo != _textInfo) {
+    	_textInfo = textInfo;
+    	[self.tableView reloadData];
+	}
+}
+</code></pre></div><p>此时效果达到<h2 id="mastertableviewedit">master中tableView的edit操作</h2><p>为了实现edit操作（这里主要是删除），要实现UITableViewDataSource的canEditRowAtIndexPath和commitEditingStyle 以及UITableViewDelegate的editingStyleForRowAtIndexPath方法。第一个表示在当前行是否可以edit，第二个处理编辑操作，第三个表示当前行的编辑选项，如下：<div class="highlighter-rouge"><pre class="highlight"><code>- (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath {
+	// Return NO if you do not want the specified item to be editable.
+	return YES;
+}
+
+- (UITableViewCellEditingStyle)tableView:(UITableView *)tableView editingStyleForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+	return UITableViewCellEditingStyleDelete;
+}
+
+// Override to support editing the table view.
+- (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath {
+	if (editingStyle == UITableViewCellEditingStyleDelete) {
+    	[tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationFade];
+	} else if (editingStyle == UITableViewCellEditingStyleInsert) {
+    
+	}   
+}
+</code></pre></div><p>这样就可以删除当前行了，运行之，发现报这样的错误： The number of rows contained in an existing section after the update (3) must be equal to the number of rows contained in that section before the update (3), plus or minus the number of rows inserted or deleted from that section (0 inserted, 1 deleted) and plus or minus the number of rows moved into or out of that section<p>是因为操作后已经删除了这一行，但是在numberOfRowsInSection中返回的是固定的行数3，所以会抱错，这里先不管，后面引入model层时这里返回model里的数据条数，当操作发生时，这里也是实时更新的<h2 id="masterview">master导航到另外的view进行添加条目的操作</h2><p>因为在appDelegate中设置splitViewController的master controller时就将MasterVeiwController对象放置在一个navigationController中，要实现导航的操作就要用到pushViewController了。<p>首先新建一个UIViewController类AddRssViewController，在其中放置一个UITextField用于输入rss源地址：<div class="highlighter-rouge"><pre class="highlight"><code>- (void)viewDidLoad {
+	[super viewDidLoad];
+
+	UITextField *textInput = [[UITextField alloc] initWithFrame:CGRectMake(10, 120, 300, 40)];
+	[textInput setBorderStyle:UITextBorderStyleRoundedRect];
+	[self.view addSubview:textInput];
+	self.view.backgroundColor = [UIColor whiteColor];
+}
+</code></pre></div><p>然后在master的navigation bar上增加一个按钮，用于跳转到add视图：<div class="highlighter-rouge"><pre class="highlight"><code>self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAdd target:self action:@selector(toAdd)];
+</code></pre></div><p>实现toAdd方法：<div class="highlighter-rouge"><pre class="highlight"><code>- (void)toAdd
+{
+	AddRssViewController *controller = [[AddRssViewController alloc] init];
+	[self.navigationController pushViewController:controller animated:YES];
+}
+</code></pre></div><p>这样当点击”+”时，master视图消失，add视图出现<p>接下来处理UITextField获取输入操作，将输入传至master因为没有引入model的原因暂时放置。AddRssViewController实现UITextFieldDelegate协议的textFieldShouldReturn方法：<div class="highlighter-rouge"><pre class="highlight"><code>self.textInput.delegate = self;
+
+- (BOOL)textFieldShouldReturn:(UITextField *)textField
+{
+	[self.textInput resignFirstResponder];
+	NSLog(@"%@", self.textInput.text);
+	return YES;
+}
+</code></pre></div><p>当输入并按return键时，log输出了键盘输入的字符串。<h2 id="detailviewrss">detail导航到另外的view展示具体的rss文章信息</h2><p>这里的操作和master导航到add视图的操作一样，只不过是在点击表格的某一行时跳转的，所以要实现didSelectRowAtIndexPath方法：<div class="highlighter-rouge"><pre class="highlight"><code>- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+	ArticleViewController *controller = [[ArticleViewController alloc] init];
+	[self.navigationController pushViewController:controller animated:YES];
+}
+</code></pre></div><p>这样一个大致的操作流程就完成了，一些细节操作将在后面完善</div></div><div class="panel-body"><h4>Related Posts</h4><ul><li class="relatedPost"> <a href="http://localhost:4000/ios/2014/11/17/%E4%B8%80%E4%B8%AARss%E9%98%85%E8%AF%BB%E5%99%A8%E7%9A%84%E5%AE%9E%E7%8E%B0-model%E5%BC%95%E5%85%A5CoreData.html">一个Rss阅读器的实现-model引入CoreData</a> (Categories: <a href="/category/iOS">iOS</a>)<li class="relatedPost"> <a href="http://localhost:4000/ios/2014/11/10/%E4%B8%80%E4%B8%AARss%E9%98%85%E8%AF%BB%E5%99%A8%E7%9A%84%E5%AE%9E%E7%8E%B0-%E8%A7%A3%E6%9E%90rss%E6%95%B0%E6%8D%AE.html">一个Rss阅读器的实现-解析rss数据</a> (Categories: <a href="/category/iOS">iOS</a>)<li class="relatedPost"> <a href="http://localhost:4000/ios/2014/10/30/%E4%B8%80%E4%B8%AARss%E9%98%85%E8%AF%BB%E5%99%A8%E7%9A%84%E5%AE%9E%E7%8E%B0-%E4%B8%8B%E8%BD%BDrss%E6%95%B0%E6%8D%AE.html">一个Rss阅读器的实现-下载rss数据</a> (Categories: <a href="/category/iOS">iOS</a>)<li class="relatedPost"> <a href="http://localhost:4000/ios/2014/10/25/%E4%B8%80%E4%B8%AARss%E9%98%85%E8%AF%BB%E5%99%A8%E7%9A%84%E5%AE%9E%E7%8E%B0-UISplitViewController%E7%9A%84%E4%BD%BF%E7%94%A8.html">一个Rss阅读器的实现-UISplitViewController的使用</a> (Categories: <a href="/category/iOS">iOS</a>)</ul></div><div class="PageNavigation"> <a class="prev" href="/ios/2014/10/25/%E4%B8%80%E4%B8%AARss%E9%98%85%E8%AF%BB%E5%99%A8%E7%9A%84%E5%AE%9E%E7%8E%B0-UISplitViewController%E7%9A%84%E4%BD%BF%E7%94%A8.html">&laquo; 一个Rss阅读器的实现-UISplitViewController的使用</a> <a class="next" href="/ios/2014/10/30/%E4%B8%80%E4%B8%AARss%E9%98%85%E8%AF%BB%E5%99%A8%E7%9A%84%E5%AE%9E%E7%8E%B0-%E4%B8%8B%E8%BD%BDrss%E6%95%B0%E6%8D%AE.html">一个Rss阅读器的实现-下载rss数据 &raquo;</a></div><div class="disqus-comments"><div id="disqus_thread"></div><script type="text/javascript"> /* <![CDATA[ */ var disqus_shortname = "stackproblems"; var disqus_identifier = "http://localhost:4000_一个Rss阅读器的实现-完成ui流程"; var disqus_title = "一个Rss阅读器的实现-完成ui流程"; /* * * DON'T EDIT BELOW THIS LINE * * */ (function() { var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true; dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js'; (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq); })(); /* ]]> */ </script></div><footer> &copy; Liu Hushan - <a href="https://github.com/justvi">https://github.com/justvi</a> - Powered by Jekyll.<div class="btn-github" style="float:right;"> <iframe src="https://ghbtns.com/github-btn.html?user=justvi&repo=justvi.github.io&type=star&count=true" frameborder="0" scrolling="0" width="85" height="20px"></iframe> <iframe src="https://ghbtns.com/github-btn.html?user=justvi&repo=justvi.github.io&type=fork&count=true" frameborder="0" scrolling="0" width="85" height="20px"></iframe></div></footer></div></div><script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script> <script src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script> <script src="/static/js/bootstrap.min.js"></script> <script src="/static/js/super-search.js"></script> <script src="/static/js/thickbox-compressed.js"></script> <script src="/static/js/projects.js"></script>

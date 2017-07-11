@@ -1,0 +1,47 @@
+title: 行动的小矮人
+description: 一个记录的地方
+author: Liu Hushan
+github: https://github.com/justvi
+about: 篮球，机械键盘，手工皮具，代码
+disqus_shortname: stackproblems
+google_analytics: UA-XXXXXXXX-Y
+avatar_url: /static/img/avatar.jpg
+
+enableTags: true
+tagarray: []
+
+collections:
+  project:
+    output: true
+    permalink: /project/:path/
+
+social:
+    - icon: fa-facebook
+      link: "#"
+    - icon: fa-twitter
+      link: "https://twitter.com/justvi"
+    - icon: fa-linkedin
+      link: "https://www.linkedin.com/in/hushan-liu-4915aa59/"
+    - icon: fa-github
+      link: "https://github.com/justvi"
+
+urls:
+    - text: About Me
+      url: /about/
+    - text: XML Feed
+      url: /feed.xml
+
+url: "https://justvi.github.io"
+baseurl: ""
+paginate: 20
+per_page: 20
+paginate_path: "/page/:num/"
+markdown: kramdown
+gems:
+  - jekyll-paginate
+  - jekyll-gist
+
+compress_html:
+  clippings: all
+  comments: ["<!-- ", " -->"]
+  endings: all
